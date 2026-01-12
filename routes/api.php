@@ -5,8 +5,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\BookingController;
-use App\Models\Booking;
-use Illuminate\Container\Attributes\Auth;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -20,6 +18,15 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 
-    Route::post('bookings', [BookingController::class, 'store']);
-    Route::get('my-bookings', [BookingController::class, 'index']);
+    Route::post('/bookings', [BookingController::class, 'store']);
+    Route::get('/bookings', [BookingController::class, 'index']);
+    Route::get('/bookings/{id}', [BookingController::class, 'show']);
+});
+
+Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+    Route::post('/vehicles', [VehicleController::class, 'store']);
+    Route::post('/vehicles/{id}', [VehicleController::class, 'update']);
+    Route::delete('/vehicles/{id}', [VehicleController::class, 'destroy']);
+
+    Route::patch('/bookings/{id}/status', [BookingController::class, 'updateStatus']);
 });

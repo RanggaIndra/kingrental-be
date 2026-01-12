@@ -3,49 +3,146 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\VehicleResource;
+use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Builder;
+
 
 class VehicleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = DB::table('vehicles')->join('branches', 'vehicles.branch_id', '=', 'branches.id')
-            ->select(
-                'vehicles.id',
-                'vehicles.name as vehicle_name',
-                'vehicles.type',
-                'vehicles.price_per_day',
-                'vehicles.image_url',
-                'vehicles.transmission',
-                'branches.name as branch_name',
-                'branches.address as branch_address'
-        )->where('vehicles.is_available', true);
+        $query = Vehicle::with('branch');
 
         if ($request->has('type')) {
-            $query->where('vehicles.type', $request->type);
+            $query->where('type', $request->type);
         }
 
         if ($request->has('search')) {
-            $query->where('vehicles.name', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $vehicles = $query->paginate(10);
+        if ($request->has('branch)id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+        
+        if ($request->has('transmission')) {
+            $query->where('transmission', $request->transmission);
+        }
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $vehicles
-        ]);
+        if ($request->has(['start_date', 'end_date'])) {
+            $start = $request->start_date;
+            $end = $request->end_date;
+
+            $query->whereDoesntHave('bookings', function (Builder $q) use ($start, $end) {
+                $q->whereIn('status', ['pending', 'approved', 'paid', 'on_rent'])
+                ->where(function ($subQ) use ($start, $end) {
+                    $subQ->whereBetween('start_date', [$start, $end])
+                        ->orWhereBetween('end_date', [$start, $end])
+                        ->orWhere(function ($overlap) use ($start, $end) {
+                            $overlap->where('start_date', '<', $start)
+                                    ->where('end_date', '>', $end);
+                        });
+                });
+            });
+        };
+
+        if ($request->has('sort_by_price')) {
+            $query->orderBy('price_per_day', $request->sort_by_price === 'desc' ? 'desc' : 'asc');
+        } else {
+            $query->latest();
+        }
+
+        return VehicleResource::collection($query->paginate(10));
     }
 
     public function show($id) {
-        $vehicle = DB::table('vehicles')->join('branches', 'vehicles.branch_id', '=', 'branches.id')->where('vehicles.id', $id)->firdst();
+        $vehicle = Vehicle::with(['branch', 'bookings' => function($q) {
+            $q->select('vehicle_id', 'start_date', 'end_date')
+            ->whereIn('status', ['approved', 'paid', 'on_rent'])
+            ->where('end_date', '>=', now());
+        }])->findOrFail($id);
 
-        if (!$vehicle) {
-            return response()->json(['message' => 'Vehicle not found'], 404);
-        }
-        
-        return response()->json(['data' => $vehicle]);
+        return new VehicleResource($vehicle);
     }
 
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'branch_id' => 'required|exists:branches,id',
+            'name' => 'required|string|max:255',
+            'type' => 'required|in:car,bike',
+            'license_plate' => 'required|unique:vehicles,license_plate',
+            'transmission' => 'required|in:manual,automatic',
+            'capacity' => 'required|integer|min:1',
+            'price_per_day' => 'required|numeric|min:0',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'description' => 'nullable|string',
+        ]);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('vehicles', 'public');
+            $validated['image_url'] = $path;
+        }
+
+        unset($validated['image']);
+        
+        $vehicle = Vehicle::create($validated);
+
+        return response()->json([
+            'message' => 'Kendaraan berhasil ditambahkan',
+            'data' => new VehicleResource($vehicle)
+        ], 201);
+    }
+    
+    public function update(Request $request, $id)
+    {
+        $vehicle = Vehicle::findOrFail($id);
+
+        $validated = $request->validate([
+            'branch_id' => 'required|exists:branches,id',
+            'name' => 'required|string|max:255',
+            'type' => 'required|in:car,bike',
+            'license_plate' => 'required|unique:vehicles,license_plate' . $vehicle->id,
+            'transmission' => 'required|in:manual,automatic',
+            'capacity' => 'required|integer',
+            'price_per_day' => 'required|numeric',
+            'is_available' => 'boolean',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'description' => 'nullable|string',
+        ]);
+
+        if ($request->hasFile('image')) {
+            if ($vehicle->image_url && Storage::disk('public')->exists($vehicle->image_url)) {
+                Storage::disk('public')->delete($vehicle->image_url);
+            }
+
+            unset($validated['image']);
+
+            $vehicle->update($validated);
+
+            return response()->json([
+                'message' => 'Kendaraan berhasil diperbarui',
+                'data' => new VehicleResource($vehicle)
+            ], 200);
+        }
+    }
+
+    public function destroy ($id)
+    {
+        $vehicle = Vehicle::findOrFail($id);
+
+        if ($vehicle->image_url && Storage::disk('public')->exists($vehicle->image_url)) {
+            Storage::disk('public')->delete($vehicle->image_url);
+        }
+
+        $vehicle->delete();
+
+        return response()->json([
+            'message' => 'Kendaraan berhasil dihapus'
+        ], 200);
+    }
 }
