@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\BookingController;
+use App\Http\Controllers\Api\BranchController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -29,4 +30,8 @@ Route::middleware(['role:admin'])->prefix('admin')->group(function () {
     Route::delete('/vehicles/{id}', [VehicleController::class, 'destroy']);
 
     Route::patch('/bookings/{id}/status', [BookingController::class, 'updateStatus']);
+
+    Route::post('/branches', [BranchController::class, 'store']);
+    Route::put('/branches/{id}', [BranchController::class, 'update']);
+    Route::delete('/branches/{id}', [BranchController::class, 'destroy']);
 });
