@@ -103,13 +103,13 @@ class VehicleController extends Controller
         $vehicle = Vehicle::findOrFail($id);
 
         $validated = $request->validate([
-            'branch_id' => 'required|exists:branches,id',
-            'name' => 'required|string|max:255',
-            'type' => 'required|in:car,bike',
-            'license_plate' => 'required|unique:vehicles,license_plate' . $vehicle->id,
-            'transmission' => 'required|in:manual,automatic',
-            'capacity' => 'required|integer',
-            'price_per_day' => 'required|numeric',
+            'branch_id' => 'sometimes|exists:branches,id',
+            'name' => 'sometimes|string|max:255',
+            'type' => 'sometimes|in:car,bike',
+            'license_plate' => 'sometimes|unique:vehicles,license_plate' . $vehicle->id,
+            'transmission' => 'sometimes|in:manual,automatic',
+            'capacity' => 'sometimes|integer',
+            'price_per_day' => 'sometimes|numeric',
             'is_available' => 'boolean',
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'description' => 'nullable|string',
@@ -120,17 +120,20 @@ class VehicleController extends Controller
                 Storage::disk('public')->delete($vehicle->image_url);
             }
 
-            unset($validated['image']);
-
-            $vehicle->update($validated);
-
-            return response()->json([
-                'message' => 'Kendaraan berhasil diperbarui',
-                'data' => new VehicleResource($vehicle)
-            ], 200);
+            $path = $request->file('image')->store('vehicles', 'public');
+            $validated['image_url'] = $path;
         }
-    }
+            
+        unset($validated['image']);
 
+        $vehicle->update($validated);
+
+        return response()->json([
+            'message' => 'Kendaraan berhasil diperbarui',
+            'data' => new VehicleResource($vehicle)
+        ], 200);
+    }
+        
     public function destroy ($id)
     {
         $vehicle = Vehicle::findOrFail($id);

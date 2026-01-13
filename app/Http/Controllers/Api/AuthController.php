@@ -50,7 +50,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             return response()->json([
-                'messagge' => 'Login berhasil',
+                'message' => 'Login berhasil',
                 'user' => Auth::user(),
             ]);
         }
