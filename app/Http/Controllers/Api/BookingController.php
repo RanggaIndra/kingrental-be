@@ -76,15 +76,19 @@ class BookingController extends Controller
                 
                 $start = \Carbon\Carbon::parse($request->start_date);
                 $end = \Carbon\Carbon::parse($request->end_date);
+
                 $days = $start->diffInDays($end) ?: 1;
-                $totalPrice = $days * $vehicle->rental_price_per_day;
+
+                $totalPrice = $days * $vehicle->price_per_day;
 
                 $booking = Booking::create([
                     'user_id' => Auth::id(),
                     'vehicle_id' => $vehicle->id,
                     'start_date' => $request->start_date,
                     'end_date' => $request->end_date,
-                    'total_price'
+                    'total_price' => $totalPrice,
+                    'notes' => $request->notes ?? null,
+                    'status' => 'pending'
                 ]);
         });
 
