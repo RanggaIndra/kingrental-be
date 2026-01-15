@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Role;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -25,7 +27,8 @@ class User extends Authenticatable
         'password',
         'phone',
         'address',
-        'role'
+        'role',
+        'branch_id'
     ];
 
     /**
@@ -48,6 +51,22 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => Role::class,
         ];
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === Role::SUPER_ADMIN;
+    }
+
+    public function isBranchAdmin(): bool
+    {
+        return $this->role === Role::BRANCH_ADMIN;
     }
 }

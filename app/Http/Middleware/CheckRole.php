@@ -13,14 +13,20 @@ class CheckRole
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, string $role): Response
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        if (!$request->user() || $request->user()->role !== $role) {
-            return response()->json([
-                'message' => 'Unauthorized / Akses Ditolak'
-            ], 403);
+        if (!$request->user()) {
+            return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        return $next($request);
+        $userRole = $request->user()->role;
+
+        foreach ($roles as $role) {
+            if ($userRole->value === $role) {
+                return $next($request);
+            }
+        }
+
+        return response()->json(['message' => 'Forbidden Access'], 403);
     }
 }

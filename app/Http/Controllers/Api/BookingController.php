@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\BookingResource;
 use App\Models\Booking;
 use App\Models\Vehicle;
+use App\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -20,25 +21,36 @@ class BookingController extends Controller
 
         $query = Booking::with(['vehicle.branch', 'user']);
 
-        if ($user->role !== 'admin') {
-            $query->where('user_id', $user->id);
-        } else {
-            if ($request->has('status')) {
-                $query->where('status', $request->status);
-            }
+        match ($user->role) {
+            Role::CUSTOMER => $query->where('user_id', $user->id),
+
+            Role::BRANCH_ADMIN => $query->whereHas('vehicle', function ($q) use ($user) {
+                $q->where('branch_id', $user->branch_id);
+            }),
+
+            Role::SUPER_ADMIN => null,
+        };
+
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
         }
 
-        $query->latest();
-
-        return BookingResource::collection($query->paginate(10));
+        return BookingResource::collection($query->latest()->paginate(10));
     }
 
     public function show(Request $request,$id)
     {
         $booking = Booking::with(['vehicle', 'user', 'payment'])->findOrFail($id);
+        $user = $request->user();
 
-        if ($request->user()->role !== 'admin' && $booking->user_id !== $request->user()->id) {
-            return response()->json(['mesasage' => ' Unauthorized'], 403);
+        $isAuthorized = match($user->role) {
+            Role::SUPER_ADMIN => true,
+            Role::BRANCH_ADMIN => $booking->vehicle->branch_id === $user->branch_id,
+            Role::CUSTOMER => $booking->user_id === $user->id,
+        };
+
+        if (!$isAuthorized) {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         return new BookingResource($booking);
@@ -55,7 +67,15 @@ class BookingController extends Controller
 
         $vehicle = Vehicle::findOrFail($request->vehicle_id);
 
-        return DB::transaction(function () use ($request, $vehicle) {
+        return DB::transaction(function () use ($request) {
+            $vehicle = Vehicle::lockForUpdate()->find($request->vehicle_id);
+
+            if ($vehicle->is_available) {
+                return response()->json([
+                    'message' => 'Kendaraan sedang tidak aktif/dalam perbaikan.'
+                ], 422);
+            }
+
             $isBooked = Booking::where('vehicle_id', $vehicle->id)
                 ->whereIn('status', ['pending', 'approved', 'paid', 'on_rent'])
                 ->where(function ($query) use ($request) {
@@ -107,6 +127,11 @@ class BookingController extends Controller
         ]);
 
         $booking = Booking::findOrFail($id);
+        $user = $request->user();
+
+        if ($user->role === Role::BRANCH_ADMIN && $booking->vehicle->branch_id !== $user->branch_id) {
+             return response()->json(['message' => 'Unauthorized action for this branch'], 403);
+        }
 
         $booking->status = $request->status;
         $booking->save();

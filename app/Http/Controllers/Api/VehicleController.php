@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\VehicleResource;
 use App\Models\Vehicle;
+use App\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -71,8 +72,9 @@ class VehicleController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'branch_id' => 'required|exists:branches,id',
+        $user = $request->user();
+    
+        $rules = [
             'name' => 'required|string|max:255',
             'type' => 'required|in:car,bike',
             'license_plate' => 'required|unique:vehicles,license_plate',
@@ -81,7 +83,19 @@ class VehicleController extends Controller
             'price_per_day' => 'required|numeric|min:0',
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'description' => 'nullable|string',
-        ]);
+        ];
+
+        if ($user->role === Role::BRANCH_ADMIN) {
+            $request->merge(['branch_id' => $user->branch_id]);
+        } else {
+            $rules['branch_id'] = 'required|exists:branches,id';
+        }
+
+        $validated = $request->validate($rules);
+
+        if ($user->role === Role::BRANCH_ADMIN) {
+            $validated['branch_id'] = $user->branch_id;
+        }
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('vehicles', 'public');
@@ -101,6 +115,11 @@ class VehicleController extends Controller
     public function update(Request $request, $id)
     {
         $vehicle = Vehicle::findOrFail($id);
+        $user = $request->user();
+
+        if ($user->role === Role::BRANCH_ADMIN && $vehicle->branch_id !== $user->branch_id) {
+            return response()->json(['message' => 'Unauthorized access to this vehicle'], 403);
+        }
 
         $validated = $request->validate([
             'branch_id' => 'sometimes|exists:branches,id',
@@ -114,6 +133,10 @@ class VehicleController extends Controller
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'description' => 'nullable|string',
         ]);
+
+        if ($user->role === Role::BRANCH_ADMIN) {
+            unset($validated['branch_id']);
+        }
 
         if ($request->hasFile('image')) {
             if ($vehicle->image_url && Storage::disk('public')->exists($vehicle->image_url)) {
@@ -134,9 +157,14 @@ class VehicleController extends Controller
         ], 200);
     }
         
-    public function destroy ($id)
+    public function destroy (Request $request, $id)
     {
         $vehicle = Vehicle::findOrFail($id);
+        $user = $request->user();
+
+        if ($user->role === Role::BRANCH_ADMIN && $vehicle->branch_id !== $user->branch_id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
         if ($vehicle->image_url && Storage::disk('public')->exists($vehicle->image_url)) {
             Storage::disk('public')->delete($vehicle->image_url);
