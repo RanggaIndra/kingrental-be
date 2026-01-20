@@ -45,8 +45,8 @@ class BookingController extends Controller
 
         $isAuthorized = match($user->role) {
             Role::SUPER_ADMIN => true,
-            Role::BRANCH_ADMIN => $booking->vehicle->branch_id === $user->branch_id,
-            Role::CUSTOMER => $booking->user_id === $user->id,
+            Role::BRANCH_ADMIN => $booking->vehicle->branch_id == $user->branch_id,
+            Role::CUSTOMER => $booking->user_id == $user->id,
         };
 
         if (!$isAuthorized) {
@@ -70,7 +70,7 @@ class BookingController extends Controller
         return DB::transaction(function () use ($request) {
             $vehicle = Vehicle::lockForUpdate()->find($request->vehicle_id);
 
-            if ($vehicle->is_available) {
+            if (!$vehicle->is_available) {
                 return response()->json([
                     'message' => 'Kendaraan sedang tidak aktif/dalam perbaikan.'
                 ], 422);
