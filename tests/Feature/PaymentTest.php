@@ -9,6 +9,7 @@ use App\Models\Branch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 
 class PaymentTest extends TestCase
 {
@@ -28,7 +29,7 @@ class PaymentTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_pay_others_booking()
     {
         $userA = User::factory()->create();
@@ -49,7 +50,7 @@ class PaymentTest extends TestCase
         $response->assertStatus(403)->assertJson(['message' => 'Unauthorized']);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_get_token_for_own_booking()
     {
         $user = User::factory()->create();
@@ -69,7 +70,7 @@ class PaymentTest extends TestCase
         $response->assertStatus(200)->assertJsonStructure(['snap_token', 'client_key'])->assertJsonFragment(['snap_token' => 'dummy_snap_token_123']);
     }
 
-    /** @test */
+    #[Test]
     public function cannot_pay_paid_booking()
     {
         $user = User::factory()->create();
@@ -89,7 +90,7 @@ class PaymentTest extends TestCase
         $response->assertStatus(422)->assertJson(['message' => 'Booking ini tidak perlu dibaar lagi.']);
     }
 
-    /** @test */
+    #[Test]
     public function webhook_updates_booking_status_to_paid()
     {
         $user = User::factory()->create();

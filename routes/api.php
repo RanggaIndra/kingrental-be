@@ -29,13 +29,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::post('/midtrans/webhook', [PaymentController::class, 'webhook']);
 
-Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+Route::middleware(['role:super_admin,branch_admin'])->prefix('admin')->group(function () {
     Route::post('/vehicles', [VehicleController::class, 'store']);
     Route::post('/vehicles/{id}', [VehicleController::class, 'update']);
     Route::delete('/vehicles/{id}', [VehicleController::class, 'destroy']);
-
     Route::patch('/bookings/{id}/status', [BookingController::class, 'updateStatus']);
+});
 
+Route::middleware(['role:super_admin'])->prefix('admin')->group(function () {
     Route::post('/branches', [BranchController::class, 'store']);
     Route::put('/branches/{id}', [BranchController::class, 'update']);
     Route::delete('/branches/{id}', [BranchController::class, 'destroy']);
