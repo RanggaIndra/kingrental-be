@@ -19,7 +19,7 @@ class MidtransService
     {
         $params = [
             'transaction_details' => [
-                'order_id' => $booking->id . '-' . rand(),
+                'order_id' => $booking->id . '-' . uniqid(),
                 'gross_amount' => (int) $booking->total_price,
             ],
             'customer_details' => [

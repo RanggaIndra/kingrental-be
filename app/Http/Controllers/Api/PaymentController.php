@@ -50,18 +50,24 @@ class PaymentController extends Controller
         $booking = Booking::find($bookingId);
         if (!$booking) return response()->json(['message' => 'Booking not found'], 404);
 
+        if ($booking->status === 'paid' && ($transactionStatus == 'capture' || $transactionStatus == 'settlement')) {
+            return response()->json(['message' => 'Payment already processed']);
+        }
+
         DB::transaction(function () use ($booking, $transactionStatus, $request) {
             if ($transactionStatus == 'capture' || $transactionStatus == 'settlement') {
                 $booking->update(['status' => 'paid']);
 
-                Payment::create([
+                Payment::firstOrCreate([
                     'booking_id' => $booking->id,
+                ],
+                [
                     'payment_method' => $request->payment_type,
                     'payment_proof' => 'midtrans_automatic',
                     'payment_date' => now(),
                     'status' => 'verified'
                 ]);
-            } else if ($transactionStatus == 'deny' || $transactionStatus == 'expire' || $transactionStatus == 'cancel') {
+            } else if (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
                 $booking->update(['status' => 'cancelled']);
             }
         });
