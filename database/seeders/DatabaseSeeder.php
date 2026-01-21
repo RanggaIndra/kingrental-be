@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Admin King Rental',
             'email' => 'admin@kingrental.com',
             'password' => Hash::make('password'),
-            'role' => 'admin',
+            'role' => 'super_admin',
             'phone' => '081234567890',
             'address' => 'Kantor Pusat Bali',
         ]);
