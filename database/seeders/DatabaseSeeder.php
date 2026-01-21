@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\Vehicle;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use App\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,7 +17,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Admin King Rental',
             'email' => 'admin@kingrental.com',
             'password' => Hash::make('password'),
-            'role' => 'super_admin',
+            'role' => Role::SUPER_ADMIN->value,
             'phone' => '081234567890',
             'address' => 'Kantor Pusat Bali',
         ]);
