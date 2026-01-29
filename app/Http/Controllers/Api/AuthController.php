@@ -32,11 +32,13 @@ class AuthController extends Controller
             'role' => Role::CUSTOMER,
         ]);
 
-        Auth::login($user);
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Register Success',
-            'user' => $user
+            'user' => $user,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
         ], 201);
     }
 
@@ -47,26 +49,29 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
+        $user = User::where('email', $request->email)->first();
 
-            return response()->json([
-                'message' => 'Login berhasil',
-                'user' => Auth::user(),
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Kredensial yang diberikan tidak cocok.'],
             ]);
         }
 
-        throw ValidationException::withMessages([
-            'email' => ['Kredensial yang diberikan tidak cocok.'],
+        $user->tokens()->delete();
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login berhasil',
+            'user' => $user,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
         ]);
     }
 
     public function logout(Request $request)
     {
-        Auth::guard('web')->logout();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'message' => 'Logout berhasil',
