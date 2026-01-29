@@ -13,24 +13,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        User::create([
-            'name' => 'Admin King Rental',
-            'email' => 'admin@kingrental.com',
-            'password' => Hash::make('password'),
-            'role' => Role::SUPER_ADMIN->value,
-            'phone' => '081234567890',
-            'address' => 'Kantor Pusat Bali',
-        ]);
-
-        User::create([
-            'name' => 'Wilson (Customer)',
-            'email' => 'wilson@gmail.com',
-            'password' => Hash::make('password'),
-            'role' => 'customer',
-            'phone' => '08987654321',
-            'address' => 'Jakarta Selatan',
-        ]);
-
+        // 1. Buat Branch terlebih dahulu
         $bali = Branch::create([
             'name' => 'King Rental Bali (Kuta)',
             'address' => 'Jl. Raya Kuta No. 88, Badung, Bali',
@@ -47,6 +30,51 @@ class DatabaseSeeder extends Seeder
             'contact_number' => '0361-654321',
         ]);
 
+        // 2. Buat User untuk SETIAP Role
+
+        // Role: Super Admin (Global)
+        User::create([
+            'name' => 'Super Admin',
+            'email' => 'superadmin@kingrental.com',
+            'password' => Hash::make('password'),
+            'role' => Role::SUPER_ADMIN->value, // Menggunakan Enum
+            'phone' => '081234567890',
+            'address' => 'Kantor Pusat Jakarta',
+        ]);
+
+        // Role: Branch Admin (Admin Cabang Bali)
+        User::create([
+            'name' => 'Admin Cabang Bali',
+            'email' => 'admin.bali@kingrental.com',
+            'password' => Hash::make('password'),
+            'role' => Role::BRANCH_ADMIN->value, // Menggunakan Enum
+            'phone' => '08122334455',
+            'address' => 'Mess Kuta, Bali',
+            'branch_id' => $bali->id, // Penting: Relasi ke Branch
+        ]);
+
+        // Role: Branch Admin (Admin Cabang Ubud)
+        User::create([
+            'name' => 'Admin Cabang Ubud',
+            'email' => 'admin.ubud@kingrental.com',
+            'password' => Hash::make('password'),
+            'role' => Role::BRANCH_ADMIN->value,
+            'phone' => '08199887766',
+            'address' => 'Gianyar, Bali',
+            'branch_id' => $ubud->id,
+        ]);
+
+        // Role: Customer
+        User::create([
+            'name' => 'Wilson Customer',
+            'email' => 'wilson@gmail.com',
+            'password' => Hash::make('password'),
+            'role' => Role::CUSTOMER->value, // Menggunakan Enum
+            'phone' => '08987654321',
+            'address' => 'Jakarta Selatan',
+        ]);
+
+        // 3. Buat Kendaraan (Vehicles)
         Vehicle::create([
             'branch_id' => $bali->id,
             'name' => 'Toyota Avanza 2023',
