@@ -18,7 +18,7 @@ class BranchController extends Controller
             ->orWhere('address', 'like', '%' . $request->search . '%');
         }
 
-        if ($request->has('all') && $request->all == ' true') {
+        if ($request->has('all') && $request->all == 'true') {
             return BranchResource::collection($query->get());
         }
 

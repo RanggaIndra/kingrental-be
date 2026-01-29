@@ -8,6 +8,9 @@ use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\PaymentController;
 
+Route::get('branches', [BranchController::class, 'index']);
+Route::get('branches/{id}', [BranchController::class, 'show']);
+
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
