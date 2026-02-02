@@ -28,7 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
-    Route::get('/bookings/{id}/payment', [PaymentController::class, 'getPaymentToken']);
+    Route::get('/bookings/{id}/payment-token', [PaymentController::class, 'getPaymentToken']);
 
     // Admin Routes (Harus di DALAM auth:sanctum)
     Route::middleware(['role:super_admin,branch_admin'])->prefix('admin')->group(function () {
