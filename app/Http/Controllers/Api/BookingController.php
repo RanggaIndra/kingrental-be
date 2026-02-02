@@ -110,7 +110,15 @@ class BookingController extends Controller
                     'notes' => $request->notes ?? null,
                     'status' => 'pending'
                 ]);
+
+                return $booking;
         });
+
+        if ($result instanceof \Illuminate\Http\JsonResponse) {
+            return $result;
+        }
+
+        $booking = $result;
 
         $booking->load('vehicle');
 
