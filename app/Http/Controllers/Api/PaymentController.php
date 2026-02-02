@@ -25,8 +25,18 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Booking ini tidak perlu dibayar lagi.'], 422);
         }
 
+        if ($booking->snap_token) {
+            return response()->json([
+                'snap_token' => $booking->snap_token,
+                'client_key' => config('services.midtrans.client_key')
+            ]);
+        }
+
         $midtrans = new MidtransService();
         $snapToken = $midtrans->getSnapToken($booking);
+
+        $booking->snap_token = $snapToken;
+        $booking->save();
 
         return response()->json([
             'snap_token' => $snapToken,

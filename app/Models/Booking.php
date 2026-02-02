@@ -8,6 +8,17 @@ class Booking extends Model
 {
     protected $guarded = ['id'];
 
+    protected $fillable = [
+        'user_id',
+        'vehicle_id',
+        'start_date',
+        'end_date',
+        'days',
+        'total_price',
+        'status',
+        'snap_token',
+    ];
+
     public function user() {
         return $this->belongsTo(User::class);
     }
