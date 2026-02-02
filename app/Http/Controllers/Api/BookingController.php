@@ -11,10 +11,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
+use App\Services\MidtransService;
+use Illuminate\Support\Facades\Log as FacadesLog;
 
 class BookingController extends Controller
-{
-    
+{   
+    protected $midtransService;
+
+    public function __construct(MidtransService $midtransService)
+    {
+        $this->midtransService = $midtransService;
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -111,6 +119,14 @@ class BookingController extends Controller
                     'status' => 'pending'
                 ]);
 
+                try {
+                    $snapToken = $this->midtransService->getSnapToken($booking);
+                    $booking->snap_token = $snapToken;
+                    $booking->save();
+                } catch (\Exception $e) {
+                    FacadesLog::error($e->getMessage());
+                }
+
                 return $booking;
         });
 
@@ -124,7 +140,8 @@ class BookingController extends Controller
 
         return response()->json([
             'message' => 'Booking berhasil dibuat. Menunggu konfirmasi admin.',
-            'data' => new BookingResource($booking)
+            'data' => new BookingResource($booking),
+            'snap_token' => $result->snap_token
         ], 201);
     }
 
