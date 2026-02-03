@@ -12,7 +12,7 @@ use App\Http\Controllers\Api\PaymentController;
 Route::get('branches', [BranchController::class, 'index']);
 Route::get('branches/{id}', [BranchController::class, 'show']);
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::get('vehicles', [VehicleController::class, 'index']);
 Route::get('vehicles/{id}', [VehicleController::class, 'show']);
 Route::post('/midtrans/webhook', [PaymentController::class, 'webhook']);
