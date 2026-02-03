@@ -3,7 +3,7 @@
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => ['http://localhost:5173', 'https://unobserving-dorinda-variatively.ngrok-free.dev'],
+    'allowed_origins' => ['http://localhost:5173', 'https://*.ngrok-free.dev'],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],

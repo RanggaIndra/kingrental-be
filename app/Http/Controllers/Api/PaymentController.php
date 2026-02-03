@@ -8,8 +8,8 @@ use App\Models\Payment;
 use App\Services\MidtransService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
-use function Symfony\Component\Clock\now;
+use Illuminate\Support\Facades\Log;
+use Exception;
 
 class PaymentController extends Controller
 {
@@ -32,16 +32,24 @@ class PaymentController extends Controller
             ]);
         }
 
-        $midtrans = new MidtransService();
-        $snapToken = $midtrans->getSnapToken($booking);
-
-        $booking->snap_token = $snapToken;
-        $booking->save();
-
-        return response()->json([
-            'snap_token' => $snapToken,
-            'client_key' => config('services.midtrans.client_key')
-        ]);
+        try {
+            $midtrans = new MidtransService();
+            $snapToken = $midtrans->getSnapToken($booking);
+    
+            $booking->snap_token = $snapToken;
+            $booking->save();
+    
+            return response()->json([
+                'snap_token' => $snapToken,
+                'client_key' => config('services.midtrans.client_key')
+            ]);
+        } catch (Exception $e) {
+            Log::error('Midtrans Error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Gagal memproses pembayaran. Silakan coba lagi nanti.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
     }
 
     public function webhook (Request $request)
