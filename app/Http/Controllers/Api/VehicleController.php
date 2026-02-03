@@ -16,7 +16,7 @@ class VehicleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Vehicle::with('branch');
+        $query = Vehicle::with(['branch', 'bookings']);
 
         if ($request->has('type')) {
             $query->where('type', $request->type);

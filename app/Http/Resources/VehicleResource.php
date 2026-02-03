@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class VehicleResource extends JsonResource
 {
@@ -14,7 +15,22 @@ class VehicleResource extends JsonResource
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
-    {
+    {   
+        $activeBooking = $this->bookings->whereIn('status', ['approved', 'paid', 'on_rent'])->where('end_date', '>', now())->sortbyDesc('end_date')->first();
+
+        $availabilityStatus = 'Available';
+        $availableIn = null;
+
+        if ($activeBooking) {
+            $endDate = Carbon::parse($activeBooking->end_date);
+            $availabilityStatus = 'Booked';
+            $availableIn = $endDate->diffForHumans(now(), [
+                'parts' => 2,
+                'join' => ' ',
+                'syntax' => Carbon::DIFF_ABSOLUTE
+            ]);
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -32,6 +48,8 @@ class VehicleResource extends JsonResource
                     'address' => $this->branch->address,
                 ];
             }),
+            'status' => $availabilityStatus,
+            'available_estimation' => $availableIn ? "Tersedia dalam {$availableIn}" : "Tersedia Sekarang",
             'created_at' => $this->created_at->toISOString(),
             'updated_at' => $this->updated_at->toISOString(),
         ];
