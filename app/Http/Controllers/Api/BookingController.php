@@ -75,7 +75,7 @@ class BookingController extends Controller
 
         $vehicle = Vehicle::findOrFail($request->vehicle_id);
 
-        return DB::transaction(function () use ($request) {
+        $result = DB::transaction(function () use ($request) {
             $vehicle = Vehicle::lockForUpdate()->find($request->vehicle_id);
 
             if (!$vehicle->is_available) {

@@ -3,10 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Booking extends Model
 {
     protected $guarded = ['id'];
+
+    public function getDaysAttribute()
+    {
+        $start = Carbon::parse($this->start_date);
+        $end = Carbon::parse($this->end_date);
+        
+        return $start->diffInDays($end) ?: 1;
+    }
 
     protected $fillable = [
         'user_id',
