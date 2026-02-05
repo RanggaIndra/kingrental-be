@@ -16,7 +16,7 @@ class VehicleResource extends JsonResource
      */
     public function toArray(Request $request): array
     {   
-        $activeBooking = $this->bookings->whereIn('status', ['approved', 'paid', 'on_rent'])->where('end_date', '>', now())->sortbyDesc('end_date')->first();
+        $activeBooking = $this->bookings->whereIn('status', ['pending', 'approved', 'paid', 'on_rent'])->where('end_date', '>', now())->sortbyDesc('end_date')->first();
 
         $availabilityStatus = 'Available';
         $availableIn = null;
