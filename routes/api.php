@@ -17,6 +17,7 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::get('vehicles', [VehicleController::class, 'index']);
 Route::get('vehicles/{id}', [VehicleController::class, 'show']);
 Route::post('/midtrans/webhook', [PaymentController::class, 'webhook']);
+Route::get('vehicles/{id}/unavailable-dates', [BookingController::class, 'getUnavailableDates']);
 
 // Protected Routes (Harus Login)
 Route::middleware('auth:sanctum')->group(function () {

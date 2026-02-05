@@ -73,8 +73,6 @@ class BookingController extends Controller
             'notes' => 'nullable|string'
         ]);
 
-        $vehicle = Vehicle::findOrFail($request->vehicle_id);
-
         $result = DB::transaction(function () use ($request) {
             $vehicle = Vehicle::lockForUpdate()->find($request->vehicle_id);
 
@@ -148,7 +146,7 @@ class BookingController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:approved,rejected,on_rent,finished,cancelled'
+            'status' => 'required|in:approved,rejected,on_rent,finished,cancelled,paid'
         ]);
 
         $booking = Booking::findOrFail($id);
@@ -164,6 +162,24 @@ class BookingController extends Controller
         return response()->json([
             'message' => 'Status booking berhasil diperbahui menjadi ' . $request->status,
             'data' => new BookingResource($booking)
+        ]);
+    }
+
+    // Endpoint Frontend for Check Availability Vehicle (Warna Kalender)
+    public function getUnavailableDates($id)
+    {
+        // Pending : Yellow
+        // Approved/Paid/On-rent : Red
+        $booking = Booking::select('start_date', 'end_date', 'status')->where('vehicle_id', $id)->whereIn('status', ['pending', 'approved', 'paid', 'on_rent'])->get();
+
+        return response()->json([
+            'data' => $booking->map(function($b) {
+                return [
+                    'start' => $b->start_date,
+                    'end'   => $b->end_date,
+                    'type'  => $b->status === 'pending' ? 'pending' : 'confirmed'
+                ];
+            })
         ]);
     }
 }
