@@ -29,7 +29,8 @@ class User extends Authenticatable
         'phone',
         'address',
         'role',
-        'branch_id'
+        'branch_id',
+        'ktp_image_path',
     ];
 
     /**

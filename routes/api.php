@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ProfileController;
 
 // Public Routes
 Route::get('branches', [BranchController::class, 'index']);
@@ -23,6 +24,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::post('/profile', [ProfileController::class, 'update']);
 
     // Customer & Admin Routes
     Route::post('/bookings', [BookingController::class, 'store']);
