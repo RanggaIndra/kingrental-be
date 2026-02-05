@@ -6,11 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\BookingResource;
 use App\Models\Booking;
 use App\Models\Vehicle;
+use App\Models\Payment;
 use App\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Builder;
 use App\Services\MidtransService;
 use Illuminate\Support\Facades\Log as FacadesLog;
 
@@ -156,8 +156,24 @@ class BookingController extends Controller
              return response()->json(['message' => 'Unauthorized action for this branch'], 403);
         }
 
-        $booking->status = $request->status;
-        $booking->save();
+        DB::transaction(function () use ($booking, $request) {
+            $oldStatus = $booking->status;
+
+            $booking->status = $request->status;
+            $booking->save();
+
+            if ($request->status === 'paid' && $oldStatus !== 'paid') {
+                Payment::firstOrCreate(
+                    ['booking_id' => $booking->id],
+                    [
+                        'payment_method' => 'manual_admin',
+                        'payment_proof' => 'verified_by_admin',
+                        'payment_date' => now(),
+                        'status' => 'verified'
+                    ]
+                );
+            }
+        });
 
         return response()->json([
             'message' => 'Status booking berhasil diperbahui menjadi ' . $request->status,
