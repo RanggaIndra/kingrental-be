@@ -16,19 +16,44 @@ class VehicleResource extends JsonResource
      */
     public function toArray(Request $request): array
     {   
-        $activeBooking = $this->bookings->whereIn('status', ['pending', 'approved', 'paid', 'on_rent'])->where('end_date', '>', now())->sortbyDesc('end_date')->first();
+        $now = Carbon::now('Asia/Jakarta');
+
+        $rawBookings = $this->relationLoaded('bookings') ? $this->bookings->whereIn('status', ['pending', 'approved', 'paid', 'on_rent']) : collect([]);
 
         $availabilityStatus = 'Available';
-        $availableIn = null;
+        $availableIn = 'Tersedia Sekarang';
 
-        if ($activeBooking) {
-            $endDate = Carbon::parse($activeBooking->end_date);
-            $availabilityStatus = 'Booked';
-            $availableIn = $endDate->diffForHumans(now(), [
-                'parts' => 2,
-                'join' => ' ',
-                'syntax' => Carbon::DIFF_ABSOLUTE
-            ]);
+        if ($rawBookings->isNotEmpty()) {
+            $currentBooking = $rawBookings->first(function($booking) use ($now) {
+                $start = Carbon::parse($booking->start_date)->startOfDay();
+                $end = Carbon::parse($booking->start_date)->endOfDay();
+                return $now->between($start, $end);
+            });
+
+            if ($currentBooking) {
+                $availabilityStatus = 'Booked';
+
+                $endDate = Carbon::parse($currentBooking->end_date);
+                $diff = $now->diffInDays($endDate, false);
+                $diff < 0 ? 0 : round($diff);
+
+                $availableIn = $diff <= 0 ? "Tersedia Besok" : "Tersedia dalam {$diff} Hari";
+            } else {
+                $nextBooking = $rawBookings->filter(function($booking) use ($now) {
+                    return Carbon::parse($booking->start_date->startOfDay()->gt($now));
+                })->sortBy('start_date')->first();
+
+                if ($nextBooking) {
+                    $nextStart = Carbon::parse($nextBooking->start_date);
+                    $daysFree = $now->diffInDays($nextStart);
+
+                    if ($daysFree > 0) {
+                        $availableIn = "Tersedia selama {$daysFree} Hari";
+                    } else {
+                        $availableIn = "Tersedia < 1 Hari";
+                    }
+                }
+            }
         }
 
         return [
@@ -50,7 +75,7 @@ class VehicleResource extends JsonResource
                 ];
             }),
             'status' => $availabilityStatus,
-            'available_estimation' => $availableIn ? "Tersedia dalam {$availableIn}" : "Tersedia Sekarang",
+            'available_estimation' => $availableIn,
             'created_at' => $this->created_at->toISOString(),
             'updated_at' => $this->updated_at->toISOString(),
         ];
