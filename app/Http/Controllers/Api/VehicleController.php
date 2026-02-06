@@ -26,7 +26,7 @@ class VehicleController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        if ($request->has('branch)id')) {
+        if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
         }
         

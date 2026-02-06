@@ -41,6 +41,7 @@ class VehicleResource extends JsonResource
             'is_available' => (bool) $this->is_available,
             'image_url' =>$this->image_url ? Storage::url($this->image_url) : null,
             'description' => $this->description,
+            'bookings' => $this->whenLoaded('bookings'),
             'branch' => $this->whenLoaded('branch', function () {
                 return [
                     'id' =>$this->branch->id,
