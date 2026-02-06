@@ -26,7 +26,7 @@ class VehicleResource extends JsonResource
         if ($rawBookings->isNotEmpty()) {
             $currentBooking = $rawBookings->first(function($booking) use ($now) {
                 $start = Carbon::parse($booking->start_date)->startOfDay();
-                $end = Carbon::parse($booking->start_date)->endOfDay();
+                $end = Carbon::parse($booking->end_date)->endOfDay();
                 return $now->between($start, $end);
             });
 
@@ -34,8 +34,8 @@ class VehicleResource extends JsonResource
                 $availabilityStatus = 'Booked';
 
                 $endDate = Carbon::parse($currentBooking->end_date);
-                $diff = $now->diffInDays($endDate, false);
-                $diff < 0 ? 0 : (int) round($diff);
+                $diffRaw = $now->diffInDays($endDate, false);
+                $diff = $diffRaw < 0 ? 0 : (int) round($diffRaw);
 
                 $availableIn = $diff <= 0 ? "Tersedia Besok" : "Tersedia dalam {$diff} Hari";
             } else {
@@ -45,7 +45,7 @@ class VehicleResource extends JsonResource
 
                 if ($nextBooking) {
                     $nextStart = Carbon::parse($nextBooking->start_date);
-                    $daysFree = $now->diffInDays($nextStart);
+                    $daysFree = (int) $now->diffInDays($nextStart);
 
                     if ($daysFree > 0) {
                         $availableIn = "Tersedia selama {$daysFree} Hari";
