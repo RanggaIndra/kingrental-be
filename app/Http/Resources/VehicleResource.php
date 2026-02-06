@@ -35,7 +35,7 @@ class VehicleResource extends JsonResource
 
                 $endDate = Carbon::parse($currentBooking->end_date);
                 $diff = $now->diffInDays($endDate, false);
-                $diff < 0 ? 0 : round($diff);
+                $diff < 0 ? 0 : (int) round($diff);
 
                 $availableIn = $diff <= 0 ? "Tersedia Besok" : "Tersedia dalam {$diff} Hari";
             } else {
