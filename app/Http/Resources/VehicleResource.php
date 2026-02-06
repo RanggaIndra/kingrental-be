@@ -40,7 +40,7 @@ class VehicleResource extends JsonResource
                 $availableIn = $diff <= 0 ? "Tersedia Besok" : "Tersedia dalam {$diff} Hari";
             } else {
                 $nextBooking = $rawBookings->filter(function($booking) use ($now) {
-                    return Carbon::parse($booking->start_date->startOfDay()->gt($now));
+                    return Carbon::parse($booking->start_date)->startOfDay()->gt($now);
                 })->sortBy('start_date')->first();
 
                 if ($nextBooking) {
